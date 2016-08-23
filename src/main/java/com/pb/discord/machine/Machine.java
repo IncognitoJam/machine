@@ -1,12 +1,15 @@
 package com.pb.discord.machine;
 
 import com.ibm.watson.developer_cloud.http.ServiceCallback;
+import net.dv8tion.jda.JDA;
 import net.dv8tion.jda.JDA.Status;
 import net.dv8tion.jda.JDABuilder;
 import net.dv8tion.jda.audio.AudioReceiveHandler;
 import net.dv8tion.jda.audio.CombinedAudio;
 import net.dv8tion.jda.audio.UserAudio;
+import net.dv8tion.jda.audio.player.FilePlayer;
 import net.dv8tion.jda.entities.Guild;
+import net.dv8tion.jda.entities.TextChannel;
 import net.dv8tion.jda.entities.User;
 import net.dv8tion.jda.entities.VoiceChannel;
 import net.dv8tion.jda.events.ReadyEvent;
@@ -23,6 +26,7 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.SourceDataLine;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 
 public class Machine extends ListenerAdapter implements AudioReceiveHandler, ServiceCallback<InputStream>
 //        ,AudioSendHandler
@@ -30,12 +34,10 @@ public class Machine extends ListenerAdapter implements AudioReceiveHandler, Ser
 
     private static final SimpleLog LOG = SimpleLog.getLog("Machine");
 
-//    private HashMap<String, String> activeGuildVoiceChannel = new HashMap<>();
-//    private TextToSpeech textToSpeech;
+    private HashMap<String, String> activeGuildVoiceChannel = new HashMap<>();
+    private HashMap<String, FilePlayer> voiceChannelFilePlayers = new HashMap<>();
 
-    //    public static final int PCM_FRAME_SIZE = 4;
-//    private Queue<Byte> buffer = new SynchronousQueue<>();
-    private VoiceChannel source, destination;
+    //    private VoiceChannel source, destination;
     private DataLine.Info dataLineInfo;
     private SourceDataLine dataLine;
 
@@ -78,6 +80,7 @@ public class Machine extends ListenerAdapter implements AudioReceiveHandler, Ser
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.isPrivate()) {
             LOG.info(String.format("[PM] %s: %s", event.getAuthor().getUsername(), event.getMessage().getContent()));
+            return;
         } else {
             LOG.info(String.format("[%s] [%s] %s: %s", event.getGuild().getName(), event.getTextChannel().getName(),
                     event.getAuthor().getUsername(), event.getMessage().getContent()));
@@ -85,63 +88,88 @@ public class Machine extends ListenerAdapter implements AudioReceiveHandler, Ser
 
         Guild guild = event.getGuild();
         User user = event.getAuthor();
+        TextChannel textChannel = event.getTextChannel();
         String content = event.getMessage().getContent();
 
-        if (content.equalsIgnoreCase("!source")) {
+//        if (content.equalsIgnoreCase("!source")) {
 //            source = findUserVoiceChannel(guild, user);
 //            if (source == null) source = findActiveVoiceChannel(guild);
 //            guild.getAudioManager().setReceivingHandler(this);
 //            guild.getAudioManager().openAudioConnection(source);
-        } else if (content.equalsIgnoreCase("!link")) {
-            source = event.getJDA().getVoiceChannelById("216280735961579523");
-
-            Guild sourceGuild = event.getJDA().getGuildById("216280735961579522");
-            sourceGuild.getAudioManager().setReceivingHandler(this);
-            sourceGuild.getAudioManager().openAudioConnection(source);
-
-            destination = findUserVoiceChannel(guild, user);
+//        } else if (content.equalsIgnoreCase("!link")) {
+//            source = event.getJDA().getVoiceChannelById("216280735961579523");
+//
+//            Guild sourceGuild = event.getJDA().getGuildById("216280735961579522");
+//            sourceGuild.getAudioManager().setReceivingHandler(this);
+//            sourceGuild.getAudioManager().openAudioConnection(source);
+//
+//            destination = findUserVoiceChannel(guild, user);
 //            if (destination == null) destination = findActiveVoiceChannel(guild);
 //            guild.getAudioManager().openAudioConnection(destination);
-        } else if (content.startsWith("!message")) {
-            source.getGuild().getTextChannels().get(0).sendMessage(content.replace("!message ", ""));
-        }
-
-//        if (content.equalsIgnoreCase("!join")) {
-//            String guildId = guild.getId();
-//
-//            VoiceChannel targetVoiceChannel = findUserVoiceChannel(guild, user);
-//            if (activeGuildVoiceChannel.containsKey(guildId)) {
-//                String activeVoiceChannelId = activeGuildVoiceChannel.get(guildId);
-//
-//                if (!activeVoiceChannelId.equals(targetVoiceChannel.getId())) {
-//                    guild.getAudioManager().moveAudioConnection(targetVoiceChannel);
-//                    activeGuildVoiceChannel.put(guildId, targetVoiceChannel.getId());
-//                } else {
-//                    textChannel.sendMessage(user.getAsMention() + ", it looks like I'm already in this voice channel!");
-//                    return;
-//                }
-//            } else {
-//                guild.getAudioManager().openAudioConnection(targetVoiceChannel);
-//                activeGuildVoiceChannel.put(guildId, targetVoiceChannel.getId());
-//            }
-//            textChannel.sendMessage("Sure, " + user.getAsMention() + "!");
-//
-//        } else if (content.equalsIgnoreCase("!leave")) {
-//            String guildId = guild.getId();
-//
-//            if (activeGuildVoiceChannel.containsKey(guildId)) {
-//                guild.getAudioManager().closeAudioConnection();
-//                activeGuildVoiceChannel.remove(guildId);
-//                textChannel.sendMessage("Bye, " + user.getAsMention() + ".");
-//            } else {
-//                textChannel.sendMessage("I'm not in a voice channel, " + user.getAsMention() + "!");
-//            }
-//
-//        } else if (content.equalsIgnoreCase("!clearchat")) {
-//
-//        } else if (content.equalsIgnoreCase("!tts")) {
-//            textChannel.sendMessage("Sorry, " + user.getAsMention() + ", but that command isn't implemented yet!");
+//        } else if (content.startsWith("!message")) {
+//            source.getGuild().getTextChannels().get(0).sendMessage(content.replace("!message ", ""));
 //        }
+
+        if (content.equalsIgnoreCase("!join")) {
+            String guildId = guild.getId();
+
+            VoiceChannel targetVoiceChannel = findUserVoiceChannel(guild, user);
+            if (activeGuildVoiceChannel.containsKey(guildId)) {
+                String activeVoiceChannelId = activeGuildVoiceChannel.get(guildId);
+
+                if (!activeVoiceChannelId.equals(targetVoiceChannel.getId())) {
+                    guild.getAudioManager().moveAudioConnection(targetVoiceChannel);
+                    activeGuildVoiceChannel.put(guildId, targetVoiceChannel.getId());
+                } else {
+                    textChannel.sendMessage(user.getAsMention() + ", it looks like I'm already in this voice channel!");
+                    return;
+                }
+            } else {
+                guild.getAudioManager().openAudioConnection(targetVoiceChannel);
+                activeGuildVoiceChannel.put(guildId, targetVoiceChannel.getId());
+            }
+            textChannel.sendMessage("Sure, " + user.getAsMention() + "!");
+
+        } else if (content.equalsIgnoreCase("!leave")) {
+            String guildId = guild.getId();
+
+            if (activeGuildVoiceChannel.containsKey(guildId)) {
+                guild.getAudioManager().closeAudioConnection();
+                activeGuildVoiceChannel.remove(guildId);
+                textChannel.sendMessage("Bye, " + user.getAsMention() + ".");
+            } else {
+                textChannel.sendMessage("I'm not in a voice channel, " + user.getAsMention() + "!");
+            }
+
+        } else if (content.equalsIgnoreCase("!clearchat")) {
+
+        } else if (content.equalsIgnoreCase("!tts")) {
+            textChannel.sendMessage("Sorry, " + user.getAsMention() + ", but that command isn't implemented yet!");
+        }
+    }
+
+    private void sendMessage(String message, TextChannel textChannel) {
+        sendMessage(message, textChannel, true);
+    }
+
+    private void sendMessage(String message, TextChannel textChannel, boolean speech) {
+        JDA jda = textChannel.getJDA();
+        Guild guild = textChannel.getGuild();
+        String guildId = guild.getId();
+
+        if (activeGuildVoiceChannel.containsKey(guildId)) {
+            VoiceChannel voiceChannel = jda.getVoiceChannelById(activeGuildVoiceChannel.get(guildId));
+            if (voiceChannel != null) {
+                VoiceChannel connectedChannel = guild.getAudioManager().getConnectedChannel();
+                if (connectedChannel != null) {
+                    if (voiceChannel != connectedChannel) {
+                        guild.getAudioManager().moveAudioConnection(voiceChannel);
+                    }
+                } else {
+                    guild.getAudioManager()
+                }
+            }
+        }
     }
 
     private VoiceChannel findUserVoiceChannel(Guild guild, User user) {
@@ -201,7 +229,7 @@ public class Machine extends ListenerAdapter implements AudioReceiveHandler, Ser
 
     @Override
     public void handleUserTalking(User user, boolean talking) {
-        if (talking) destination.getGuild().getTextChannels().get(0).sendMessage(user.getAsMention() + " is talking");
+//        if (talking) destination.getGuild().getTextChannels().get(0).sendMessage(user.getAsMention() + " is talking");
     }
 
     public static void main(String[] args) {
