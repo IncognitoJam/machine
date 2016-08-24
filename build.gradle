@@ -16,4 +16,6 @@ dependencies {
     compile 'net.dv8tion:JDA:2.2.1_358'
     compile 'commons-io:commons-io:2.5'
     compile 'com.ibm.watson.developer_cloud:java-sdk:3.3.0'
+    compile 'de.huxhorn.sulky:de.huxhorn.sulky.3rdparty.jlayer:1.0'
+    compile 'com.googlecode.json-simple:json-simple:1.1'
 }
