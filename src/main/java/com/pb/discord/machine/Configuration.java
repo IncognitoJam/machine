@@ -5,9 +5,9 @@ import java.io.File;
 public class Configuration {
 
     public enum Bot {
-        MACHINE("MTcwMTk4NTE1NjU2NTU2NTQ0.Cmzx0A.EHRWesuaZ48NJ9G7VP_EZsR0FQI"),
-        SAMARITAN("MTgzNzE1MDY2NzY2NTU3MTg0.Cpy71A.YHtmP2sVnhcUBq8RtOdljhiGdPY"),
-        HAZECRAFT("MjA2ODUxMDk0MTYzMjI2NjI4.Cpy73g.gPSBqr6kCWUUcbFRUp_kyHL6uLQ");
+        MACHINE(""),
+        SAMARITAN(""),
+        HAZECRAFT("");
 
         private String token;
 
