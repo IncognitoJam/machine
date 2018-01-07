@@ -26,7 +26,7 @@ public class Configuration {
 
     public static final Bot TARGET_BOT = Bot.MACHINE;
 
-    public static final String IBM_USERNAME = "a4ddbd69-8305-4faa-b6d3-9b90a4b65773";
-    public static final String IBM_PASSWORD = "cYsfXOAB6yY6";
+    public static final String IBM_USERNAME = "";
+    public static final String IBM_PASSWORD = "";
 
 }
